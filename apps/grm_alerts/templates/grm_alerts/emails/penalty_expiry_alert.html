@@ -1,0 +1,50 @@
+{% extends "grm_alerts/emails/base_alert.html" %}
+
+{% block content %}
+<p>You have <strong>{{ record_count }}</strong> request(s) with penalty deadlines approaching.</p>
+
+<div class="alert-box {% if expiry_hours <= 24 %}urgent{% endif %}">
+    <strong>Penalty Deadline:</strong> 
+    {% if expiry_hours <= 1 %}
+        <span class="highlight">Less than 1 hour remaining</span>
+    {% elif expiry_hours <= 24 %}
+        <span class="highlight">{{ expiry_hours|floatformat:1 }} hours remaining</span>
+    {% else %}
+        {{ expiry_hours|floatformat:1 }} hours remaining
+    {% endif %}
+</div>
+
+<p>Please review and resolve the following penalty situations:</p>
+{% endblock %}
+
+{% block details_table %}
+<table class="details-table">
+    <thead>
+        <tr>
+            <th>PNR</th>
+            <th>Request ID</th>
+            <th>Penalty Type</th>
+            <th>Amount</th>
+            <th>Deadline</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in records %}
+        <tr>
+            <td><strong>{{ record.pnr }}</strong></td>
+            <td>{{ record.request_master_id }}</td>
+            <td>{{ record.timeline_type }}</td>
+            <td>{{ record.penalty_amount|default:"N/A" }}</td>
+            <td>{{ record.expiry_date }}</td>
+            <td>{{ record.status }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p>
+    <a href="#" class="btn">Resolve Penalty</a>
+    <a href="#" class="btn">Contact Support</a>
+</p>
+{% endblock %}

@@ -1,0 +1,433 @@
+{
+  "fare_expiry_query": {
+    "name": "Fare Expiry Query",
+    "description": "Get requests with fare offers expiring within specified hours",
+    "configuration": {
+      "tables": ["request_master", "airlines_request_mapping", "transaction_master", "user_details", "corporate_details"],
+      "columns": [
+        {"column": "request_master.request_master_id", "alias": "request_master_id"},
+        {"column": "request_master.user_id", "alias": "user_id"},
+        {"column": "request_master.user_currency", "alias": "user_currency"},
+        {"column": "request_master.request_group_name", "alias": "request_group_name"},
+        {"column": "request_master.number_of_passenger", "alias": "number_of_passenger"},
+        {"column": "request_master.number_of_adult", "alias": "number_of_adult"},
+        {"column": "request_master.number_of_child", "alias": "number_of_child"},
+        {"column": "request_master.number_of_infant", "alias": "number_of_infant"},
+        {"column": "transaction_master.transaction_id", "alias": "transaction_id"},
+        {"column": "transaction_master.fare_expiry_date", "alias": "fare_expiry_date"},
+        {"column": "transaction_master.fare_advised", "alias": "fare_advised"},
+        {"column": "transaction_master.child_fare", "alias": "child_fare"},
+        {"column": "transaction_master.infant_fare", "alias": "infant_fare"},
+        {"column": "transaction_master.fare_validity", "alias": "fare_validity"},
+        {"column": "transaction_master.cancel_policy_id", "alias": "cancel_policy_id"},
+        {"column": "user_details.first_name", "alias": "first_name"},
+        {"column": "user_details.last_name", "alias": "last_name"},
+        {"column": "user_details.email_id", "alias": "email_id"},
+        {"column": "corporate_details.corporate_name", "alias": "corporate_name"}
+      ],
+      "joins": [
+        {
+          "left_table": "request_master",
+          "left_field": "request_master_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "airlines_request_mapping",
+          "left_field": "airlines_request_id",
+          "right_table": "transaction_master",
+          "right_field": "airlines_request_id"
+        },
+        {
+          "left_table": "request_master",
+          "left_field": "user_id",
+          "right_table": "user_details",
+          "right_field": "user_id"
+        },
+        {
+          "left_table": "user_details",
+          "left_field": "corporate_id",
+          "right_table": "corporate_details",
+          "right_field": "corporate_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "airlines_request_mapping.current_status",
+            "operator": "=",
+            "value": 3
+          },
+          {
+            "field": "transaction_master.fare_expiry_date",
+            "operator": "BETWEEN",
+            "value": {
+              "value1": "__CURRENT_TIME__",
+              "value2": "__EXPIRY_TIME__"
+            }
+          },
+          {
+            "field": "request_master.queue_no",
+            "operator": "=",
+            "value": 0
+          }
+        ]
+      },
+      "orderBy": ["request_master.request_master_id"],
+      "limit": 1000
+    }
+  },
+  
+  "payment_expiry_query": {
+    "name": "Payment Expiry Query",
+    "description": "Get PNRs with payments expiring within specified hours",
+    "configuration": {
+      "tables": ["airlines_request_mapping", "request_master", "payment_master", "pnr_payment_details", "user_details"],
+      "columns": [
+        {"column": "request_master.user_id", "alias": "user_id"},
+        {"column": "airlines_request_mapping.request_master_id", "alias": "request_master_id"},
+        {"column": "airlines_request_mapping.airlines_request_id", "alias": "airlines_request_id"},
+        {"column": "request_master.user_currency", "alias": "user_currency"},
+        {"column": "request_master.request_group_name", "alias": "request_group_name"},
+        {"column": "pnr_payment_details.pnr_payment_validity_date", "alias": "payment_validity_date"},
+        {"column": "pnr_payment_details.pnr_payment_id", "alias": "pnr_payment_id"},
+        {"column": "pnr_payment_details.pnr", "alias": "pnr"},
+        {"column": "pnr_payment_details.paid_amount", "alias": "paid_amount"},
+        {"column": "payment_master.payment_master_id", "alias": "payment_master_id"},
+        {"column": "payment_master.payment_percentage", "alias": "payment_percentage"},
+        {"column": "payment_master.percentage_amount", "alias": "percentage_amount"},
+        {"column": "payment_master.payment_status", "alias": "payment_status"},
+        {"column": "payment_master.payment_validity_date", "alias": "payment_validity_date"},
+        {"column": "request_master.fare_acceptance_transaction_id", "alias": "fare_acceptance_transaction_id"}
+      ],
+      "joins": [
+        {
+          "left_table": "airlines_request_mapping",
+          "left_field": "request_master_id",
+          "right_table": "request_master",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "payment_master",
+          "left_field": "airlines_request_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "airlines_request_id"
+        },
+        {
+          "left_table": "payment_master",
+          "left_field": "payment_master_id",
+          "right_table": "pnr_payment_details",
+          "right_field": "payment_master_id"
+        },
+        {
+          "left_table": "request_master",
+          "left_field": "user_id",
+          "right_table": "user_details",
+          "right_field": "user_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "pnr_payment_details.payment_status",
+            "operator": "!=",
+            "value": "Cancel"
+          },
+          {
+            "field": "airlines_request_mapping.current_status",
+            "operator": "=",
+            "value": 9
+          },
+          {
+            "field": "payment_master.payment_status",
+            "operator": "=",
+            "value": 9
+          },
+          {
+            "field": "request_master.fare_acceptance_transaction_id",
+            "operator": ">",
+            "value": 0
+          },
+          {
+            "field": "pnr_payment_details.payment_status",
+            "operator": "=",
+            "value": "PENDING"
+          },
+          {
+            "field": "pnr_payment_details.pnr_payment_validity_date",
+            "operator": "BETWEEN",
+            "value": {
+              "value1": "__CURRENT_TIME__",
+              "value2": "__EXPIRY_TIME__"
+            }
+          }
+        ]
+      },
+      "orderBy": ["airlines_request_mapping.request_master_id", "pnr_payment_details.pnr"],
+      "limit": 1000
+    }
+  },
+  
+  "passenger_expiry_query": {
+    "name": "Passenger Expiry Query", 
+    "description": "Get PNRs with passenger submissions expiring within specified hours",
+    "configuration": {
+      "tables": ["airlines_request_mapping", "request_master", "passenger_master", "payment_master", "transaction_master"],
+      "columns": [
+        {"column": "request_master.user_id", "alias": "user_id"},
+        {"column": "request_master.request_master_id", "alias": "request_master_id"},
+        {"column": "request_master.request_group_name", "alias": "request_group_name"},
+        {"column": "request_master.number_of_passenger", "alias": "number_of_passenger"},
+        {"column": "request_master.number_of_adult", "alias": "number_of_adult"},
+        {"column": "request_master.number_of_child", "alias": "number_of_child"},
+        {"column": "request_master.number_of_infant", "alias": "number_of_infant"},
+        {"column": "passenger_master.pnr", "alias": "pnr"},
+        {"column": "passenger_master.time_validity", "alias": "passenger_validity_date"},
+        {"column": "payment_master.payment_master_id", "alias": "payment_master_id"},
+        {"column": "payment_master.payment_percentage", "alias": "payment_percentage"},
+        {"column": "payment_master.percentage_amount", "alias": "percentage_amount"},
+        {"column": "payment_master.payment_status", "alias": "payment_status"},
+        {"column": "payment_master.payment_validity_date", "alias": "payment_validity_date"},
+        {"column": "transaction_master.transaction_id", "alias": "transaction_id"},
+        {"column": "transaction_master.cancel_policy_id", "alias": "cancel_policy_id"}
+      ],
+      "joins": [
+        {
+          "left_table": "airlines_request_mapping",
+          "left_field": "request_master_id",
+          "right_table": "request_master",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "passenger_master",
+          "left_field": "airlines_request_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "airlines_request_id"
+        },
+        {
+          "left_table": "transaction_master",
+          "left_field": "airlines_request_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "airlines_request_id"
+        },
+        {
+          "left_table": "payment_master",
+          "left_field": "airlines_request_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "airlines_request_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "airlines_request_mapping.current_status",
+            "operator": "IN",
+            "value": "5,9,10,12,13,15"
+          },
+          {
+            "field": "passenger_master.passenger_status",
+            "operator": "=",
+            "value": 13
+          },
+          {
+            "field": "passenger_master.pnr",
+            "operator": "NOT LIKE",
+            "value": "GROUP%"
+          },
+          {
+            "field": "request_master.fare_acceptance_transaction_id",
+            "operator": "!=",
+            "value": 0
+          },
+          {
+            "field": "passenger_master.time_validity",
+            "operator": "BETWEEN",
+            "value": {
+              "value1": "__CURRENT_TIME__",
+              "value2": "__EXPIRY_TIME__"
+            }
+          }
+        ]
+      },
+      "orderBy": ["passenger_master.passenger_master_id"],
+      "limit": 1000
+    }
+  },
+  
+  "penalty_expiry_query": {
+    "name": "Penalty Expiry Query",
+    "description": "Get requests with penalties expiring within specified hours",
+    "configuration": {
+      "tables": ["airlines_request_mapping", "request_master", "transaction_master", "request_timeline_details", "pnr_blocking_details", "request_group_details"],
+      "columns": [
+        {"column": "pnr_blocking_details.pnr", "alias": "pnr"},
+        {"column": "request_master.user_id", "alias": "user_id"},
+        {"column": "airlines_request_mapping.airlines_request_id", "alias": "airlines_request_id"},
+        {"column": "airlines_request_mapping.request_master_id", "alias": "request_master_id"},
+        {"column": "airlines_request_mapping.current_status", "alias": "current_status"},
+        {"column": "transaction_master.transaction_id", "alias": "transaction_id"},
+        {"column": "request_timeline_details.expiry_date", "alias": "expiry_date"},
+        {"column": "request_timeline_details.timeline_type", "alias": "timeline_type"},
+        {"column": "request_timeline_details.status", "alias": "status"}
+      ],
+      "joins": [
+        {
+          "left_table": "transaction_master",
+          "left_field": "airlines_request_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "airlines_request_id"
+        },
+        {
+          "left_table": "request_master",
+          "left_field": "fare_acceptance_transaction_id",
+          "right_table": "transaction_master",
+          "right_field": "transaction_id"
+        },
+        {
+          "left_table": "request_master",
+          "left_field": "request_master_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "pnr_blocking_details",
+          "left_field": "request_master_id",
+          "right_table": "request_master",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "transaction_master",
+          "left_field": "transaction_id",
+          "right_table": "request_timeline_details",
+          "right_field": "transaction_id"
+        },
+        {
+          "left_table": "request_group_details",
+          "left_field": "transaction_master_id",
+          "right_table": "transaction_master",
+          "right_field": "transaction_id"
+        },
+        {
+          "left_table": "request_group_details",
+          "left_field": "series_group_id",
+          "right_table": "request_timeline_details",
+          "right_field": "series_group_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "request_timeline_details.timeline_type",
+            "operator": "=",
+            "value": "PENALTY"
+          },
+          {
+            "field": "request_timeline_details.status",
+            "operator": "!=",
+            "value": "TIMELINEEXTEND"
+          },
+          {
+            "field": "request_timeline_details.expiry_date",
+            "operator": "BETWEEN",
+            "value": {
+              "value1": "__CURRENT_TIME__",
+              "value2": "__EXPIRY_TIME__"
+            }
+          }
+        ]
+      },
+      "orderBy": ["airlines_request_mapping.request_master_id", "transaction_master.transaction_id", "request_timeline_details.expiry_date"],
+      "limit": 1000
+    }
+  },
+  
+  "expired_offers_query": {
+    "name": "Expired Offers Query",
+    "description": "Get offers that have already expired and need status update",
+    "configuration": {
+      "tables": ["request_master", "airlines_request_mapping", "transaction_master"],
+      "columns": [
+        {"column": "request_master.request_master_id", "alias": "request_master_id"},
+        {"column": "airlines_request_mapping.airlines_request_id", "alias": "airlines_request_id"},
+        {"column": "transaction_master.fare_expiry_date", "alias": "fare_expiry_date"}
+      ],
+      "joins": [
+        {
+          "left_table": "request_master",
+          "left_field": "request_master_id",
+          "right_table": "airlines_request_mapping",
+          "right_field": "request_master_id"
+        },
+        {
+          "left_table": "airlines_request_mapping",
+          "left_field": "airlines_request_id",
+          "right_table": "transaction_master",
+          "right_field": "airlines_request_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "airlines_request_mapping.current_status",
+            "operator": "=",
+            "value": 3
+          },
+          {
+            "field": "transaction_master.fare_expiry_date",
+            "operator": "<",
+            "value": "__CURRENT_TIME__"
+          }
+        ]
+      },
+      "limit": 1000
+    }
+  },
+  
+  "expired_penalties_query": {
+    "name": "Expired Penalties Query",
+    "description": "Get penalties that have expired and need status update",
+    "configuration": {
+      "tables": ["request_timeline_details", "transaction_master"],
+      "columns": [
+        {"column": "request_timeline_details.timeline_id", "alias": "timeline_id"},
+        {"column": "request_timeline_details.transaction_id", "alias": "transaction_id"},
+        {"column": "request_timeline_details.expiry_date", "alias": "expiry_date"},
+        {"column": "request_timeline_details.timeline_type", "alias": "timeline_type"}
+      ],
+      "joins": [
+        {
+          "left_table": "request_timeline_details",
+          "left_field": "transaction_id",
+          "right_table": "transaction_master",
+          "right_field": "transaction_id"
+        }
+      ],
+      "where": {
+        "condition": "AND",
+        "rules": [
+          {
+            "field": "request_timeline_details.timeline_type",
+            "operator": "=",
+            "value": "PENALTY"
+          },
+          {
+            "field": "request_timeline_details.status",
+            "operator": "!=",
+            "value": "EXPIRED"
+          },
+          {
+            "field": "request_timeline_details.expiry_date",
+            "operator": "<",
+            "value": "__CURRENT_TIME__"
+          }
+        ]
+      },
+      "limit": 1000
+    }
+  }
+}

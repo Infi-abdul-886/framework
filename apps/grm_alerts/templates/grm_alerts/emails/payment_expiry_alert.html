@@ -1,0 +1,50 @@
+{% extends "grm_alerts/emails/base_alert.html" %}
+
+{% block content %}
+<p>You have <strong>{{ record_count }}</strong> PNR(s) with pending payments that will expire soon.</p>
+
+<div class="alert-box {% if expiry_hours <= 24 %}urgent{% endif %}">
+    <strong>Payment Deadline:</strong> 
+    {% if expiry_hours <= 1 %}
+        <span class="highlight">Less than 1 hour remaining</span>
+    {% elif expiry_hours <= 24 %}
+        <span class="highlight">{{ expiry_hours|floatformat:1 }} hours remaining</span>
+    {% else %}
+        {{ expiry_hours|floatformat:1 }} hours remaining
+    {% endif %}
+</div>
+
+<p>Please ensure payment is completed before the deadline to avoid cancellation:</p>
+{% endblock %}
+
+{% block details_table %}
+<table class="details-table">
+    <thead>
+        <tr>
+            <th>PNR</th>
+            <th>Request ID</th>
+            <th>Payment Amount</th>
+            <th>Currency</th>
+            <th>Payment Deadline</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in records %}
+        <tr>
+            <td><strong>{{ record.pnr }}</strong></td>
+            <td>{{ record.request_master_id }}</td>
+            <td>{{ record.percentage_amount|floatformat:2 }}</td>
+            <td>{{ record.user_currency }}</td>
+            <td>{{ record.payment_validity_date }}</td>
+            <td>{{ record.payment_percentage }}% Payment</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<p>
+    <a href="#" class="btn">Make Payment</a>
+    <a href="#" class="btn">View Payment Details</a>
+</p>
+{% endblock %}

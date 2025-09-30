@@ -1,0 +1,125 @@
+{% extends 'admin/base_site.html' %}
+{% load static %}
+
+{% block title %}GRM Alerts Dashboard{% endblock %}
+
+{% block extrahead %}
+<style>
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #007cba;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #333;
+    }
+    .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+    .recent-activity {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    .activity-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .status-badge {
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+    .status-success { background: #d4edda; color: #155724; }
+    .status-failed { background: #f8d7da; color: #721c24; }
+    .status-running { background: #d1ecf1; color: #0c5460; }
+    .status-active { background: #d1ecf1; color: #0c5460; }
+    .status-draft { background: #f8f9fa; color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <h1>GRM Alerts Dashboard</h1>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ total_workflows }}</div>
+            <div class="stat-label">Total Workflows</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ active_workflows }}</div>
+            <div class="stat-label">Active Workflows</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ total_executions }}</div>
+            <div class="stat-label">Total Executions</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ success_rate }}%</div>
+            <div class="stat-label">Success Rate</div>
+        </div>
+    </div>
+    
+    <div class="recent-activity">
+        <h2>Recent Executions</h2>
+        {% for execution in recent_executions %}
+        <div class="activity-item">
+            <div>
+                <strong>{{ execution.workflow.name }}</strong><br>
+                <small>{{ execution.started_at|timesince }} ago</small>
+            </div>
+            <div>
+                <span class="status-badge status-{{ execution.status }}">{{ execution.status }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <p>No recent executions</p>
+        {% endfor %}
+    </div>
+    
+    <div class="recent-activity">
+        <h2>Recent Workflows</h2>
+        {% for workflow in recent_workflows %}
+        <div class="activity-item">
+            <div>
+                <strong>{{ workflow.name }}</strong><br>
+                <small>{{ workflow.alert_type }} - Updated {{ workflow.updated_at|timesince }} ago</small>
+            </div>
+            <div>
+                <span class="status-badge status-{{ workflow.status }}">{{ workflow.status }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <p>No workflows configured</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
